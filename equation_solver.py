@@ -5,7 +5,7 @@ Supports linear, quadratic, and general algebraic equations
 """
 
 import re
-from typing import Union, List, Dict, Tuple
+from typing import Union, List, Dict, Tuple, Any
 
 
 class EquationSolver:
@@ -71,7 +71,7 @@ class EquationSolver:
         
         return (x1, x2)
     
-    def parse_equation(self, equation_str: str) -> Dict[str, any]:
+    def parse_equation(self, equation_str: str) -> Dict[str, Any]:
         """
         Parse equation string to extract coefficients
         
@@ -96,10 +96,14 @@ class EquationSolver:
         # Parse for quadratic equation
         if "x^2" in equation or "x²" in equation:
             # Extract coefficients for ax^2 + bx + c = 0
-            a = self._extract_coefficient(left, r'([+-]?\d*\.?\d*)x[\^²]2') - \
-                self._extract_coefficient(right, r'([+-]?\d*\.?\d*)x[\^²]2')
-            b = self._extract_coefficient(left, r'([+-]?\d*\.?\d*)x(?![²\^])') - \
-                self._extract_coefficient(right, r'([+-]?\d*\.?\d*)x(?![²\^])')
+            # Match x^2 or x² patterns
+            a_pattern = r'([+-]?\d*\.?\d*)x(?:\^2|²)'
+            a = self._extract_coefficient(left, a_pattern) - \
+                self._extract_coefficient(right, a_pattern)
+            # Match x but not x^2 or x²
+            b_pattern = r'([+-]?\d*\.?\d*)x(?!\^2|²)'
+            b = self._extract_coefficient(left, b_pattern) - \
+                self._extract_coefficient(right, b_pattern)
             c = self._extract_constant(left) - self._extract_constant(right)
             
             return {'type': 'quadratic', 'a': a, 'b': b, 'c': c}
@@ -134,8 +138,8 @@ class EquationSolver:
     
     def _extract_constant(self, expr: str) -> float:
         """Extract constant terms from expression"""
-        # Remove all terms with x
-        expr_no_x = re.sub(r'[+-]?\d*\.?\d*x[\^²]?\d?', '', expr)
+        # Remove all terms with x (including x, x^2, x²)
+        expr_no_x = re.sub(r'[+-]?\d*\.?\d*x(?:\^2|²)?', '', expr)
         
         if not expr_no_x or expr_no_x in ['+', '-']:
             return 0.0
